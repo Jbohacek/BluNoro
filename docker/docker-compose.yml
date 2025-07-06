@@ -1,0 +1,51 @@
+services:
+  blunoro.api:
+    image: blunoroapi
+    container_name: blunoro-api
+    build:
+      context: ..
+      dockerfile: src/Presentation/BluNoro.API/Dockerfile
+    ports:
+      - "5000:5000"
+    # Pokud bude API vystavené na portu 5000
+    # Přidej proměnné prostředí pro monitoring, pokud budeš mít endpoint /metrics
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    depends_on:
+      - blunoro.api
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  blunoro.web:
+    image: blunoroweb
+    container_name: blunoro-web
+    build:
+      context: ..
+      dockerfile: src/Presentation/BluNoro.Web/Dockerfile
+
+  blunoro.serverconsole:
+    image: serverconsole
+    container_name: blunoro-serverconsole
+    build:
+      context: ..
+      dockerfile: src/Presentation/BluNoro.ServerConsole/Dockerfile
+
+networks:
+  default:
+    driver: bridge
